@@ -13,7 +13,8 @@
   ],
   "minimum-stability": "stable",
   "require": {
-    "yozh/yii2-base": "@dev"
+    "yozh/yii2-base": "@dev",
+    "lajax/yii2-translate-manager": "@dev"
   },
   "extra": {
     "_bootstrap": "yozh\\multilingual\\Bootstrap"
