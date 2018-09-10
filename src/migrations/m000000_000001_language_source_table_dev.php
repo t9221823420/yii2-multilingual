@@ -42,6 +42,7 @@ class m000000_000001_language_source_table_dev extends Migration
 	public function getColumns( $columns = [] )
 	{
 		$columns = parent::getColumns( [
+			'category'  => $this->string()->defaultValue('app'),
 			'model'     => $this->string()->null(),
 			'pk'        => $this->string()->null(),
 			'attribute' => $this->string()->null(),

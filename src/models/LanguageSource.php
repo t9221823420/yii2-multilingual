@@ -11,60 +11,47 @@ namespace yozh\multilingual\models;
 use lajax\translatemanager\services\Scanner;
 use Yii;
 use yii\base\Model;
-use yozh\base\models\BaseModel as ActiveRecord;
+use yii\db\ActiveRecord;
 use yozh\base\traits\ActiveRecordTrait;
 
 class LanguageSource extends \lajax\translatemanager\models\LanguageSource
 {
+	const TRANSLATION_CATEGORY_SETTINGS_CONST = 'TRANSLATION_CATEGORY';
+	
 	use ActiveRecordTrait;
 	
-	public static function updateTranslation( $target, $attributes, $byPk = true, $condition = [], $category = null )
+	public static function updateDBTranslations( $target, $attributes, $byPk = true, $condition = [], $category = null )
 	{
 		if( is_string( $attributes ) ) {
 			$attributes = [ $attributes ];
+		}
+		
+		if( !isset( $condition['pk'] ) && $byPk !== true && (int)$byPk ) {
+			$condition['pk'] = $pk = (int)$byPk;
 		}
 		
 		$changed = [];
 		
 		if( is_object( $target ) ) {
 			
-			$className = ( new\ReflectionObject( $target ) )->getShortName();
+			$className = get_class( $target );
 			
-			foreach( $attributes as $attribute ) {
+			foreach( $attributes as $key => $value ) {
 				
-				$condition = [
-					'model'     => $className,
-					'attribute' => $attribute,
-				];
+				if( is_numeric( $key ) ) {
+					$attribute = $value;
+					$message   = $target->$attribute;
+				}
+				else {
+					$attribute = $key;
+					$message   = $value;
+				}
 				
 				if( $byPk === true && $target instanceof ActiveRecord ) {
 					$condition['pk'] = $pk = $target->primaryKey;
 				}
-				else if( (int)$byPk ) {
-					$condition['pk'] = $pk = (int)$byPk;
-				}
 				
-				if( $records = static::findAll( $condition ) ) {
-					
-					$changed = array_merge( $changed, static::_updateRecords( $records, $target->$attribute, $category ) );
-					
-				}
-				else {
-					
-					$LanguageSource = new static( [
-						'category'  => $category ?? Scanner::CATEGORY_DATABASE,
-						'message'   => $target->$attribute,
-						'model'     => $className,
-						'attribute' => $attribute,
-						'pk'        => $pk ?? null,
-					] );
-					
-					$LanguageSource->save();
-					
-					$records = [ $LanguageSource ];
-					
-				}
-				
+				static::_updateModelsRecords( $message, $condition, $className, $attribute, $pk ?? null, $category );
 			}
 			
 		}
@@ -74,35 +61,11 @@ class LanguageSource extends \lajax\translatemanager\models\LanguageSource
 			
 			foreach( $attributes as $attribute => $message ) {
 				
-				$condition = [
-					'model'     => $className,
-					'attribute' => $attribute,
-				];
-				
-				if( (int)$byPk ) {
-					$condition['pk'] = $pk = (int)$byPk;
+				if( is_numeric( $attribute ) ) {
+					throw new \yii\base\InvalidParamException( "\$attributes are not set." );
 				}
 				
-				if( $records = LanguageSource::findAll( $condition ) ) {
-					
-					$changed = array_merge( $changed, static::_updateRecords( $records, $message, $category ) );
-					
-				}
-				else {
-					
-					$LanguageSource = new static( [
-						'category'  => $category ?? Scanner::CATEGORY_DATABASE,
-						'message'   => $message,
-						'model'     => $className,
-						'attribute' => $attribute,
-						'pk'        => $pk ?? null,
-					] );
-					
-					$LanguageSource->save();
-					
-					$records = [ $LanguageSource ];
-					
-				}
+				static::_updateModelsRecords( $message, $condition, $className, $attribute, $pk ?? null, $category );
 				
 			}
 		}
@@ -112,25 +75,80 @@ class LanguageSource extends \lajax\translatemanager\models\LanguageSource
 		
 	}
 	
-	protected static function _updateRecords( $records, $message, $category = null )
+	protected static function _updateModelsRecords( $message, $condition, $className, $attribute, $pk = null, $category = null )
 	{
-		$changed = [];
+		$condition = array_merge( [
+			'model'     => $className,
+			'attribute' => $attribute,
+		], ( $condition ?? [] ) );
 		
-		foreach( $records as $LanguageSource ) {
-			
-			$LanguageSource->updateAttributes( [
-				'category' => $category ?? $LanguageSource->$category,
-				'message'  => $message,
-			] );
-			
-			$changed[ $LanguageSource->id ] = true;
+		if( !isset( $condition['pk'] ) && (int)$pk ) {
+			$condition['pk'] = $pk;
 		}
 		
-		if( count( $changed ) ) {
-			LanguageTranslate::updateAll( [ 'changed' => true ], [ 'id' => $changed ] );
+		/*
+		if( !isset( $condition['pk'] ) ) {
+			throw new \yii\base\InvalidParamException( "There is not set 'primaryKey' for query's condition." );
+		}
+		*/
+		
+		if( !isset( $condition['pk'] ) && !isset( $condition['message'] ) ) {
+			throw new \yii\base\InvalidParamException( "There is not set 'primaryKey' or 'message' for query's condition." );
+		}
+		
+		$changed = [];
+		
+		if( $records = LanguageSource::findAll( $condition ) ) {
+			
+			foreach( $records as $LanguageSource ) {
+				
+				$category = $category ?? $LanguageSource->category;
+				
+				if( $LanguageSource->category !== $category || $LanguageSource->message !== $message ) {
+					
+					$LanguageSource->updateAttributes( [
+						'category' => $category ?? $LanguageSource->category,
+						'message'  => $message,
+					] );
+					
+					$changed[ $LanguageSource->id ] = true;
+					
+				}
+				
+			}
+			
+			if( count( $changed ) ) {
+				LanguageTranslate::updateAll( [ 'changed' => true ], [ 'id' => array_keys( $changed ) ] );
+			}
+			
+		}
+		else {
+			
+			$LanguageSource = new static( [
+				'category'  => $category ?? Scanner::CATEGORY_DATABASE,
+				'message'   => $message,
+				'model'     => $className,
+				'attribute' => $attribute,
+				'pk'        => strval( $pk ?? null ),
+			] );
+			
+			$LanguageSource->save();
+			
 		}
 		
 		return $changed;
 		
+	}
+	
+	public function rules()
+	{
+		return [
+			[ [ 'message' ], 'string' ],
+			
+			[ [ 'category', 'model', 'attribute', 'pk', ], 'string', 'max' => 255 ],
+			[ [ 'category', 'model', 'attribute', 'pk', 'message', ], 'filter', 'filter' => 'trim' ],
+			[ [ 'category', 'model', 'attribute', 'pk', 'message', ], 'filter', 'filter' => '\yii\helpers\HtmlPurifier::process' ],
+		
+		];
 	}
 }

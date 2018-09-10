@@ -54,14 +54,12 @@ class m000000_000002_language_translate_table_dev extends Migration
 	{
 		return ArrayHelper::merge( [
 			
-			/*
 			[
-				'refTable'   => 'parent',
+				'refTable'   => LanguageSource::getRawTableName(),
 				'refColumns' => 'id',
-				'columns'    => 'parent_id',
-				//'onDelete'   => self::CONSTRAINTS_ACTION_RESTRICT,
+				'columns'    => 'id',
+				'onDelete'   => self::CONSTRAINTS_ACTION_CASCADE,
 			],
-			*/
 		
 		], $references );
 	}
