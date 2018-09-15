@@ -34,7 +34,7 @@ class m000000_000002_language_translate_table_dev extends Migration
 		}
 		
 		parent::safeUp( [
-			'mode' => 1 ? self::ALTER_MODE_UPDATE : self::ALTER_MODE_IGNORE,
+			'mode' => 1 ? static::ALTER_MODE_UPDATE : static::ALTER_MODE_IGNORE,
 		] );
 		
 	}
