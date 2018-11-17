@@ -9,7 +9,7 @@
 namespace yozh\multilingual\models;
 
 use Yii;
-use yozh\base\models\BaseModel as ActiveRecord;
+use yozh\base\models\BaseActiveRecord as ActiveRecord;
 use yozh\base\traits\ActiveRecordTrait;
 
 class Language extends \lajax\translatemanager\models\Language

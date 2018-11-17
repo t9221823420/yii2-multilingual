@@ -20,7 +20,7 @@ class m000000_000002_language_translate_table_dev extends Migration
 	
 	public function __construct( array $config = [] )
 	{
-		static::$_table = \yozh\multilingual\models\LanguageTranslate::getRawTableName();
+		static::$_table = static::$_table ?? \yozh\multilingual\models\LanguageTranslate::getRawTableName();
 		
 		parent::__construct( $config );
 	}
