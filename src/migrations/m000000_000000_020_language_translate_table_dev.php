@@ -13,16 +13,16 @@ use yozh\multilingual\models\Language;
 use yozh\multilingual\models\LanguageSource;
 use yozh\base\components\helpers\ArrayHelper;
 
-class m000000_000002_language_translate_table_dev extends Migration
+class m000000_000000_020_language_translate_table_dev extends Migration
 {
+	protected static $_table;
 	
-	//protected static $_table = '{{%tablename}}';
-	
-	public function __construct( array $config = [] )
-	{
+	public function __construct( array $config = [] ) {
+		
 		static::$_table = static::$_table ?? \yozh\multilingual\models\LanguageTranslate::getRawTableName();
 		
 		parent::__construct( $config );
+		
 	}
 	
 	
@@ -30,7 +30,6 @@ class m000000_000002_language_translate_table_dev extends Migration
 	{
 		if( $this->db->getTableSchema( static::$_table, true ) === null ) {
 			throw new \yii\base\Exception( "'{static::$_table}' does not exists. You need to apply lajax/yii2-translate-manager migrations first." );
-			
 		}
 		
 		parent::safeUp( [

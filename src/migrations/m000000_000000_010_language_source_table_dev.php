@@ -13,24 +13,22 @@ use yozh\multilingual\models\Language;
 use yozh\multilingual\models\LanguageSource;
 use yozh\base\components\helpers\ArrayHelper;
 
-class m000000_000001_language_source_table_dev extends Migration
+class m000000_000000_010_language_source_table_dev extends Migration
 {
+	protected static $_table;
 	
-	//protected static $_table = '{{%tablename}}';
-	
-	public function __construct( array $config = [] )
-	{
-		static::$_table = LanguageSource::getRawTableName();
+	public function __construct( array $config = [] ) {
+		
+		static::$_table = static::$_table ?? LanguageSource::getRawTableName();
 		
 		parent::__construct( $config );
+		
 	}
-	
 	
 	public function safeUp( $params = [] )
 	{
 		if( $this->db->getTableSchema( static::$_table, true ) === null ) {
-			throw new \yii\base\Exception( "'{static::$_table}' does not exists. You need to apply lajax/yii2-translate-manager migrations first." );
-			
+			throw new \yii\base\Exception( static::$_table . " does not exists. You need to apply lajax/yii2-translate-manager migrations first." );
 		}
 		
 		parent::safeUp( [
