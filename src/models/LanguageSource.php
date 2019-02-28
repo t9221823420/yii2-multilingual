@@ -140,7 +140,7 @@ class LanguageSource extends \lajax\translatemanager\models\LanguageSource
 		
 	}
 	
-	public function rules()
+	public function rules( $rules = [] )
 	{
 		return [
 			[ [ 'message' ], 'string' ],
